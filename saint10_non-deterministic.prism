@@ -1,0 +1,810 @@
+mdp
+
+module task_planner
+        // item : [0..6] init 0;
+        // barcode : [0..3] init 0;
+        // box : [0..6] init 2;
+        // obstacle : [0..1] init 0;
+        // gripper : [0..2] init 1;
+        // conveyor : [0..2] init 2;
+        // sorter : [0..2] init 1;
+        // robot : [0..8] init 0;
+        // warehouse : [0..6] init 2;
+        // box_detectability : [0..2] init 0;
+        // item_detectability : [0..2] init 0;
+        // readability : [0..2] init 0;     
+        // graspability : [0..2] init 0;
+        // movability : [0..1] init 0;
+        // dice : [0..80] init 80;
+        // num_attempts : [0..6] init 0;
+
+        item : [0..6];
+        barcode : [0..3];
+        box : [0..6];
+        obstacle : [0..1];
+        // obstacle 0 unknown
+        // obstacle 1 obstacle_present
+        gripper : [0..2];
+        conveyor : [0..2];
+        sorter : [0..2];
+        robot : [0..8];
+        // robot 0 unknown
+        // robot 1 find_box_pose
+        // robot 2 inspect_box_pose
+        // robot 3 post_grasp_pose
+        // robot 4 pre_place_pose
+        // robot 5 place_pose
+        // robot 6 check_empty_pose
+        // robot 7 home_pose
+        // robot 8 find_obstacle_pose
+        warehouse : [0..6];
+        box_detectability : [0..2];
+        item_detectability : [0..2];
+        readability : [0..2];
+        graspability : [0..2];
+        movability : [0..1];
+        dice : [0..80];
+        // dice 0 reset
+        // dice 1 detect_item successful
+        // dice 2 detect_item unsuccessful
+        // dice 3 detect_item observation
+        // dice 4 read_barcode successful
+        // dice 5 read_barcode unsuccessful
+        // dice 6 read_barcode observation
+        // dice 7 grasp successful
+        // dice 8 grasp unsuccessful
+        // dice 9 grasp observation
+        // dice 10 transport successful
+        // dice 11 transport unsuccessful, lost item
+        // dice 12 transport unsuccessful, obstacle
+        // dice 13 transport observation
+        // dice 14 place successful
+        // dice 15 place unsuccessful
+        // dice 16 place observation
+        // dice 17 detect_box successful
+        // dice 18 detect_box unsuccessful, no detection
+        // dice 19 detect_box unsuccessful, no box
+        // dice 20 detect_box observation
+        // dice 21 successful -> emptiness check needed
+        // dice 22 unsuccessful -> no emptiness check needed
+        // dice 23 move_to_find_box_pose successful
+        // dice 24 move_to_find_box_pose unsuccessful
+        // dice 25 move_to_find_box_pose observation
+        // dice 26 move_to_inspect_box_pose successful
+        // dice 27 move_to_inspect_box_pose unsuccessful
+        // dice 28 move_to_inspect_box_pose observation
+        // dice 29 check_gripper_occupied successful
+        // dice 30 check_gripper_occupied unsuccessful
+        // dice 31 check_gripper_occupied observation
+        // dice 32 move_to_place_pose successful
+        // dice 33 move_to_place_pose unsuccessful
+        // dice 34 move_to_place_pose observation
+        // dice 35 check_gripper_free successful
+        // dice 36 check_gripper_free unsuccessful
+        // dice 37 check_gripper_free observation
+        // dice 38 move_to_check_empty_pose successful
+        // dice 39 move_to_check_empty_pose unsuccessful
+        // dice 40 move_to_check_empty_pose observation
+        // dice 41 move_home successful
+        // dice 42 move_home unsuccessful
+        // dice 43 move_home observation
+        // dice 44 move_to_find_obstacle_pose successful
+        // dice 45 move_to_find_obstacle_pose unsuccessful
+        // dice 46 move_to_find_obstacle_pose observation
+        // dice 47 flip_item successful
+        // dice 48 flip_item unsuccessful
+        // dice 49 flip_item observation
+        // dice 50 blind_grasp successful
+        // dice 51 blind_grasp unsuccessful
+        // dice 52 blind_grasp observation  
+        // dice 53 drop_item_in_box successful
+        // dice 54 drop_item_in_box unsuccessful
+        // dice 55 drop_item_in_box observation 
+        // dice 56 dispose_item successful
+        // dice 57 dispose_item unsuccessful
+        // dice 58 dispose_item observation 
+        // dice 59 adapt_find_box_pose successful
+        // dice 60 adapt_find_box_pose unsuccessful
+        // dice 61 adapt_find_box_pose observation  
+        // dice 62 adapt_inspect_box_pose successful
+        // dice 63 adapt_inspect_box_pose unsuccessful
+        // dice 64 adapt_inspect_box_pose observation 
+        // dice 65 manual_barcode_scan successful
+        // dice 66 manual_barcode_scan unsuccessful
+        // dice 67 manual_barcode_scan observation    
+        // dice 68 manual_grasp successful
+        // dice 69 manual_grasp unsuccessful
+        // dice 70 manual_grasp observation  
+        // dice 71 manual_transport successful
+        // dice 72 manual_transport unsuccessful
+        // dice 73 manual_transport observation  
+        // dice 74 manual_place successful
+        // dice 75 manual_place unsuccessful
+        // dice 76 manual_place observation  
+        // dice 77 manual_cycle successful
+        // dice 78 manual_cycle unsuccessful
+        // dice 79 manual_cycle observation  
+        // dice 80 initialize
+        num_attempts : [0..6]; 
+        
+        [initialize] dice=80 -> (dice'=0);
+        
+        // Find Box
+        [request_box] (box=5 | box=6) & (robot=4 | robot=5 | robot=7) & dice=0 -> (box'=1) & (conveyor'=1);
+        [box_arrived] box=1 & conveyor=1 & dice=0 -> (box'=2) & (conveyor'=2);
+        [move_to_find_box_pose_roll_dice] obstacle=0 & gripper=1 & robot=7 & movability=0 & dice=0 -> 0.9: (dice'=23) + 0.1: (dice'=24);
+        [move_to_find_box_pose_successful] dice=23 -> (robot'=1) & (dice'=25);
+        [move_to_find_box_pose_unsuccessful] dice=24 -> (robot'=0) & (dice'=25);
+        [move_to_find_box_pose_observation] movability_observed<20 & dice=25 -> (movability'=1) & (dice'=0);
+        [move_to_find_box_pose_observation] movability_observed>=20 & dice=25 -> (movability'=0) & (dice'=0);
+        [detect_box_roll_dice] (box=0 | box=2) & gripper=1 & conveyor=2 & robot=1 & box_detectability=0 & warehouse=2 & dice=0 -> 0.5:(dice'=17) + 0.3:(dice'=18) + 0.2:(dice'=19);
+        [detect_box_successful] dice=17 -> (box'=3) & (dice'=20);
+        [detect_box_unsuccessful_no_detection] dice=18 -> (dice'=20);
+        [detect_box_unsuccessful_no_box] dice=19 -> (box'=6) & (dice'=20);
+        [detect_box_observation] box_detectability_observed<20 & dice=20 -> (box_detectability'=2) & (dice'=0);
+        [detect_box_observation] box_detectability_observed<80 & box_detectability_observed>=20 & dice=20 -> (box_detectability'=1) & (dice'=0);
+        [detect_box_observation] box_detectability_observed>=80 & dice=20 -> (box_detectability'=0) & (dice'=0);
+        [get_box_info] (box=3) & dice=0 -> (box'=4) & (warehouse'=3);
+        
+        // Find Item
+        [move_to_inspect_box_pose_roll_dice] box=4 & obstacle=0 & gripper=1 & conveyor=2 & robot!=2 & movability=0 & dice=0 -> 0.9:(dice'=26) + 0.1:(dice'=27);
+        [move_to_inspect_box_pose_successful] dice=26 -> (robot'=2) & (dice'=28);
+        [move_to_inspect_box_pose_unsuccessful] dice=27 -> (robot'=0) & (dice'=28);
+        [move_to_inspect_box_pose_observation] movability_observed<20 & dice=28 -> (movability'=1) & (dice'=0);
+        [move_to_inspect_box_pose_observation] movability_observed>=20 & dice=28 -> (movability'=0) & (dice'=0);
+        [detect_item_roll_dice] item !=1 & box=4 & gripper=1 & conveyor=2 & robot=2 & (warehouse=3 | warehouse=4) & item_detectability=0 & movability=0 & dice=0 -> (dice'=1);
+        [detect_item_successful] dice=1 -> (item'=1) & (dice'=3);
+        [detect_item_unsuccessful] dice=2 -> (dice'=3);
+        [detect_item_observation] item_detectability_observed<20 & dice=3-> (item_detectability'=2) & (dice'=0);
+        [detect_item_observation] item_detectability_observed<80 & item_detectability_observed>=20 & dice=3 -> (item_detectability'=1) & (dice'=0);
+        [detect_item_observation] item_detectability_observed>=80 & dice=3 -> (item_detectability'=0) & (dice'=0);
+        
+        // Read Barcode
+        [read_barcode_roll_dice] item=1 & barcode=0 & box=4 & gripper=1 & conveyor=2 & robot=2 & warehouse=3 & readability=0 & dice=0 -> (dice'=4);
+        [read_barcode_successful] dice=4 -> (barcode'=1) & (dice'=6);
+        [read_barcode_unsuccessful] dice=5 -> (dice'=6);
+        [read_barcode_observation] readability_observed<20 & dice=6 -> (readability'=2) & (dice'=0);
+        [read_barcode_observation] readability_observed<80 & readability_observed>=20 & dice=6 -> (readability'=1) & (dice'=0);
+        [read_barcode_observation] readability_observed>=80 & dice=6 -> (readability'=0) & (dice'=0);
+        [check_barcode] barcode=1 & warehouse=3 & dice=0 -> (barcode'=2) & (warehouse'=4);
+
+        // Grasp Item
+        [grasp_roll_dice] item=1 & barcode=2 & box=4 & gripper=1 & conveyor=2 & robot=2 & warehouse=4 & graspability=0 & movability=0 & dice=0 -> (dice'=7);
+        [grasp_successful] dice=7 -> (item'=2) & (gripper'=2) & (robot'=3) & (dice'=9);
+        [grasp_unsuccessful] dice=8 -> (item'=0) & (gripper'=1) & (robot'=3) & (dice'=9);
+        [grasp_observation] graspability_observed<20 & movability_observed<20 & dice=9 -> (graspability'=2) & (movability'=1) & (dice'=0);
+        [grasp_observation] graspability_observed<20 & movability_observed>=20  & dice=9 -> (graspability'=2) & (movability'=0) & (dice'=0);
+        [grasp_observation] graspability_observed<80 & graspability_observed>=20 & movability_observed<20 & dice=9 -> (graspability'=1) & (movability'=1) & (dice'=0);
+        [grasp_observation] graspability_observed<80 & graspability_observed>=20 & movability_observed>=20 & dice=9 -> (graspability'=1) & (movability'=0) & (dice'=0);
+        [grasp_observation] graspability_observed>=80 & movability_observed<20 & dice=9 -> (graspability'=0) & (movability'=1) & (dice'=0);
+        [grasp_observation] graspability_observed>=80 & movability_observed>=20 & dice=9 -> (graspability'=0) & (movability'=0) & (dice'=0);
+
+        // Transport Item
+        [transport_roll_dice] item=2 & obstacle=0 & gripper=2 & robot!=4 & movability=0 & dice=0 -> (dice'=10);
+        [transport_successful] dice=10 -> (item'=3) & (robot'=4) & (dice'=13);
+        [transport_unsuccessful_lost_item] dice=11 -> (item'=3) & (robot'=4) & (dice'=13);
+        [transport_unsuccessful_obstacle] dice=12 -> (item'=3) & (obstacle'=1) & (robot'=8) & (dice'=13);
+        [transport_observation] movability_observed<20 & dice=13 -> (movability'=1) & (dice'=0);
+        [transport_observation] movability_observed>=20 & dice=13 -> (movability'=0) & (dice'=0);
+        [check_gripper_occupied_roll_dice] gripper=2 & item=3 & movability=0 & dice=0 -> 0.9:(dice'=29) + 0.1:(dice'=30);
+        [check_gripper_occupied_successful] dice=29 & true_gripper_state=2 -> (item'=2) & (dice'=31);
+        [check_gripper_occupied_successful] dice=29 & true_gripper_state=1 -> (item'=4) & (gripper'=1) & (dice'=31);
+        [check_gripper_occupied_unsuccessful] dice=30 -> (gripper'=0) & (dice'=31);
+        [check_gripper_occupied_observation] movability_observed<20 & dice=31 -> (movability'=1) & (dice'=0);
+        [check_gripper_occupied_observation] movability_observed>=20 & dice=31 -> (movability'=0) & (dice'=0);
+        
+        // Place Item
+        [move_to_place_pose_roll_dice] item=2 & obstacle=0 & sorter=1 & robot=4 & movability=0 & dice=0 -> 0.9:(dice'=32) + 0.1:(dice'=33);
+        [move_to_place_pose_successful] dice=32 -> (robot'=5) & (dice'=34);
+        [move_to_place_pose_unsuccessful] dice=33 -> (robot'=0) & (dice'=34);
+        [move_to_place_pose_observation] movability_observed<20 & dice=34 -> (movability'=1) & (dice'=0);
+        [move_to_place_pose_observation] movability_observed>=20 & dice=34 -> (movability'=0) & (dice'=0);
+        [place_roll_dice] item=2 & barcode=2 & gripper=2 & sorter=1 & robot=5 & warehouse=4 & movability=0 & dice=0 -> 0.9: (dice'=14) + 0.1: (dice'=15);
+        [place_successful] dice=14 -> (item'=0) & (gripper'=0) & (dice'=16);
+        [place_unsuccessful] dice=15 -> (item'=0) & (gripper'=0) & (dice'=16);
+        [place_observation] movability_observed<20 & dice=16 -> (movability'=1) & (dice'=0);
+        [place_observation] movability_observed>=20 & dice=16 -> (movability'=0) & (dice'=0);
+        [check_gripper_free_roll_dice] item=0 & gripper=0 & robot=5 & warehouse=4 & movability=0 & dice=0 -> 0.9:(dice'=35) + 0.1:(dice'=36);
+        [check_gripper_free_successful] dice=35 & true_gripper_state=1 -> (item'=5) & (gripper'=1) & (warehouse'=0) & (num_attempts'=0) & (dice'=37);
+        [check_gripper_free_successful] dice=35 & true_gripper_state=2 -> (gripper'=2) & (dice'=37);
+        [check_gripper_free_unsuccessful] dice=36 -> (gripper'=0) & (dice'=37);
+        [check_gripper_free_observation] movability_observed<20 & dice=37 -> (movability'=1) & (dice'=0);
+        [check_gripper_free_observation] movability_observed>=20 & dice=37 -> (movability'=0) & (dice'=0);
+
+        // Update Warehouse after Place
+        [update_warehouse] item=5 & box!=5 & warehouse=0 & req_pick_cycles>0 & dice=0 -> (item'=0) & (warehouse'=3);
+        [update_warehouse] item=5 & box!=5 & warehouse=0 & req_pick_cycles=0 & dice=0 -> (item'=0) & (warehouse'=5);
+        [update_warehouse] (box=5 | box=6) & req_box_cycles>0 & dice=0 -> (warehouse'=2);
+        [update_warehouse] (box=5 | box=6) & req_box_cycles=0 & dice=0 -> (warehouse'=1);
+
+        // Check Empty
+        [get_decommission_info_roll_dice] box=4 & gripper=1 & warehouse=5 & dice=0 -> (dice'=21);
+        [get_decommission_info_successful] dice=21 -> (warehouse'=6) & (dice'=0);
+        [get_decommission_info_unsuccessful] dice=22 & req_box_cycles=1 -> (item'=0) & (barcode'=0) & (box'=5) & (warehouse'=1) & (dice'=0);
+        [get_decommission_info_unsuccessful] dice=22 & req_box_cycles>1 -> (item'=0) & (barcode'=0) & (box'=5) & (warehouse'=2) & (dice'=0);
+        [move_to_check_empty_pose_roll_dice] box=4 & obstacle=0 & gripper=1 & conveyor=2 & robot!=6 & movability=0 & dice=0 -> 0.9: (dice'=38) + 0.1: (dice'=39);
+        [move_to_check_empty_pose_successful] dice=38 -> (robot'=6) & (dice'=40);
+        [move_to_check_empty_pose_unsuccessful] dice=39 -> (robot'=0) & (dice'=40);
+        [move_to_check_empty_pose_observation] movability_observed<20 & dice=40 -> (movability'=1) & (dice'=0);
+        [move_to_check_empty_pose_observation] movability_observed>=20 & dice=40 -> (movability'=0) & (dice'=0);
+        [check_empty] box=4 & gripper=1 & conveyor=2 & robot=6 & warehouse=6 & dice=0 & req_box_cycles=1 -> (item'=0) & (barcode'=0) & (box'=5) & (warehouse'=1);
+        [check_empty] box=4 & gripper=1 & conveyor=2 & robot=6 & warehouse=6 & dice=0 & req_box_cycles>1 -> (item'=0) & (barcode'=0) & (box'=5) & (warehouse'=2);
+        
+        // [decommission] warehouse =0 & box=5 & dice=0 & req_box_cycles>1 -> (item'=0) & (barcode'=0) & (box'=0) & (warehouse'=2);
+        // [decommission_idle] warehouse=0 & box=5 & dice=0 & req_box_cycles=1 -> (item'=0) & (barcode'=0) & (box'=0) & (warehouse'=1);
+
+        // Motion
+        [move_home_roll_dice] obstacle=0 & conveyor=2 & movability=0 & dice=0 -> 0.9: (dice'=41) + 0.1: (dice'=42);
+        [move_home_successful] dice=41 -> (robot'=7) & (dice'=43);
+        [move_home_unsuccessful] dice=42-> (robot'=0) & (dice'=43);
+        [move_home_observation] movability_observed<20 & dice=43 -> (movability'=1) & (dice'=0);
+        [move_home_observation] movability_observed>=20 & dice=43 -> (movability'=0) & (dice'=0);
+
+        // Exploration
+        [facility_explore_box] box=0 & dice=0 -> (box'=2);
+        [facility_explore_conveyor] conveyor=0 & dice=0 -> (conveyor'=true_conveyor_state);
+        [facility_explore_sorter] sorter=0 & dice=0 -> (sorter'=true_sorter_state);
+        [explore_gripper] gripper=0 & movability=0 & dice=0 -> (gripper'=true_gripper_state);
+        [move_to_find_obstacle_pose_roll_dice] obstacle=1 & conveyor=2 & robot!=8 & movability=0 & dice=0 -> 0.9: (dice'=44) + 0.1: (dice'=45);
+        [move_to_find_obstacle_pose_successful] dice=44 -> (robot'=8) & (dice'=46);
+        [move_to_find_obstacle_pose_unsuccessful] dice=45 -> (robot'=0) & (dice'=46);
+        [move_to_find_obstacle_pose_observation] movability_observed<20 & dice=46 -> (movability'=1) & (dice'=0);
+        [move_to_find_obstacle_pose_observation] movability_observed>=20 & dice=46 -> (movability'=0) & (dice'=0);
+        [detect_obstacle] obstacle=1 & gripper=1 & conveyor=2 & robot=8 & dice=0 -> (obstacle'=0);
+
+        // Autonomous Recovery
+        [flip_item_roll_dice] box=4 & conveyor=2 & gripper=1 & robot=2 & movability=0 & dice=0 -> 0.9: (dice'=47) + 0.1: (dice'=48);
+        [flip_item_successful] dice=47 -> (item'=0) & (gripper'=0) & (item_detectability'=0) & (readability'=0) & (graspability'=0) & (dice'=49);
+        [flip_item_unsuccessful] dice=48 -> (robot'=0) & (dice'=49);
+        [flip_item_observation] movability_observed<20 & dice=49 -> (movability'=1) & (dice'=0);
+        [flip_item_observation] movability_observed>=20 & dice=49 -> (movability'=0) & (dice'=0);
+        [blind_grasp_roll_dice] box=4 & conveyor=2 & gripper=1 & robot=2 & item_detectability=2 & warehouse=4 & movability=0 & dice=0 -> 0.9: (dice'=50) + 0.1: (dice'=51);
+        [blind_grasp_successful] dice=50 -> (item'=2) & (robot'=3) & (item_detectability'=0) & (readability'=0) & (graspability'=0) & (dice'=52);
+        [blind_grasp_unsuccessful] dice=51 -> (robot'=0) & (dice'=52);
+        [blind_grasp_observation] movability_observed<20 & dice=52 -> (movability'=1) & (dice'=0);
+        [blind_grasp_observation] movability_observed>=20 & dice=52 -> (movability'=0) & (dice'=0);
+        [drop_item_in_box_roll_dice] item!=0 & box=4 & conveyor=2 & gripper=2 & (robot=2 | robot=3) & movability=0 & dice=0 -> 0.9: (dice'=53) + 0.1: (dice'=54);
+        [drop_item_in_box_successful] dice=53 -> (item'=0) & (gripper'=1) & (dice'=55);
+        [drop_item_in_box_unsuccessful] dice=54 -> (robot'=0) & (dice'=55);
+        [drop_item_in_box_observation] movability_observed<20 & dice=55 -> (movability'=1) & (dice'=0);
+        [drop_item_in_box_observation] movability_observed>=20 & dice=55 -> (movability'=0) & (dice'=0);
+        [dispose_item_roll_dice] item=0 & gripper=2 & dice=0 -> 0.9: (dice'=56) + 0.1: (dice'=57);
+        [dispose_item_successful] dice=56 -> (item'=0) & (gripper'=1) & (dice'=58);
+        [dispose_item_unsuccessful] dice=57 -> (robot'=0) & (dice'=58);
+        [dispose_item_observation] movability_observed<20 & dice=58 -> (movability'=1) & (dice'=0);
+        [dispose_item_observation] movability_observed>=20 & dice=58 -> (movability'=0) & (dice'=0);
+        [adapt_find_box_pose_roll_dice] obstacle=0 & gripper=1 & box_detectability=1 & movability=0 & dice=0 -> 0.9: (dice'=59) + 0.1: (dice'=60);
+        [adapt_find_box_pose_successful] dice=59 -> (robot'=1) & (box_detectability'=0) & (dice'=61);
+        [adapt_find_box_pose_unsuccessful] dice=60 -> (robot'=0) & (dice'=61);
+        [adapt_find_box_pose_observation] movability_observed<20 & dice=61 -> (movability'=1) & (dice'=0);
+        [adapt_find_box_pose_observation] movability_observed>=20 & dice=61 -> (movability'=0) & (dice'=0);
+        [adapt_inspect_box_pose_roll_dice] conveyor=2 & gripper=1 & (item_detectability=1 | readability=1) & (warehouse=3 | warehouse=4) & movability=0 & dice=0 -> 0.9: (dice'=62) + 0.1: (dice'=63);
+        [adapt_inspect_box_pose_successful] dice=62 -> (robot'=2) & (item_detectability'=0) & (readability'=0) & (dice'=64);
+        [adapt_inspect_box_pose_unsuccessful] dice=63 -> (robot'=0) & (dice'=64);
+        [adapt_inspect_box_pose_observation] movability_observed<20 & dice=64 -> (movability'=1) & (dice'=0);
+        [adapt_inspect_box_pose_observation] movability_observed>=20 & dice=64 -> (movability'=0) & (dice'=0);
+        [adapt_grasp_parameters] item=1 & barcode=2 & box=4 & conveyor=2 & warehouse=4 & graspability=1 & dice=0 -> (graspability'=0);
+        [facility_detect_box] (box=0 | box=2) & conveyor=2 & gripper=1 & (robot=1 | robot=7) & warehouse=2 & box_detectability=2 & dice=0 -> (box'=3) & (box_detectability'=0);
+        [facility_reset_motion] movability=1 & dice=0 -> (movability'=0);
+        
+        // Semi-Autonomous Recovery
+        [semi_autonomous_detect_item] item !=1 & box=4 & gripper=1 & conveyor=2 & robot=2 & (warehouse=3 | warehouse=4) & (item_detectability=0 | item_detectability=1) & dice=0 -> (item'=1) & (graspability'=0);
+        [semi_autonomous_grasp_item] item =1 & box=4 & gripper=1 & conveyor=2 & robot=2 & warehouse=4 & dice=0 -> (item'=1) & (graspability'=0);
+        [semi_autonomous_reset_motion] movability=1 & dice=0 -> (movability'=0);
+
+        // Manual Recovery
+        [manual_barcode_scan_roll_dice] box=4 & barcode=0 & gripper=1 & warehouse=3 & movability=0 & dice=0 -> 0.9: (dice'=65) + 0.1: (dice'=66);
+        [manual_barcode_scan_successful] dice=65 -> (barcode'=1) & (robot'=0) & (dice'=67);
+        [manual_barcode_scan_unsuccessful] dice=66 -> (robot'=0) & (dice'=67);
+        [manual_barcode_scan_observation] movability_observed<20 & dice=67 -> (movability'=1) & (dice'=0);
+        [manual_barcode_scan_observation] movability_observed>=20 & dice=67 -> (movability'=0) & (dice'=0);
+        [manual_grasp_roll_dice] box=4 & gripper=1 & warehouse=4 & movability=0 & dice=0 -> 0.9: (dice'=68) + 0.1: (dice'=66);
+        [manual_grasp_successful] dice=68 -> (item'=2) & (gripper'=2) & (robot'=3) & (graspability'=0) & (dice'=70);
+        [manual_grasp_unsuccessful] dice=69 -> (robot'=0) & (dice'=70);
+        [manual_grasp_observation] movability_observed<20 & dice=70 -> (movability'=1) & (dice'=0);
+        [manual_grasp_observation] movability_observed>=20 & dice=70 -> (movability'=0) & (dice'=0);
+        [manual_transport_roll_dice] item=2 & gripper=2 & robot!=4 & movability=0 & dice=0 -> 0.9: (dice'=71) + 0.1: (dice'=66);
+        [manual_transport_successful] dice=71 -> (robot'=4) & (dice'=70);
+        [manual_transport_unsuccessful] dice=72 -> (robot'=0) & (dice'=73);
+        [manual_transport_observation] movability_observed<20 & dice=73 -> (movability'=1) & (dice'=0);
+        [manual_transport_observation] movability_observed>=20 & dice=73 -> (movability'=0) & (dice'=0);
+        [manual_place_roll_dice] item=2 & barcode=2 & gripper=2 & sorter=1 & warehouse=4 & movability=0 & dice=0 -> 0.9: (dice'=74) + 0.1: (dice'=75);
+        [manual_place_successful] dice=74 -> (item'=5) & (gripper'=1) & (warehouse'=0) & (dice'=76);
+        [manual_place_unsuccessful] dice=75 -> (robot'=0) & (dice'=76);
+        [manual_place_observation] movability_observed<20 & dice=76 -> (movability'=1) & (dice'=0);
+        [manual_place_observation] movability_observed>=20 & dice=76 -> (movability'=0) & (dice'=0);
+        [manual_cycle_roll_dice] box=4 & warehouse=4 & movability=0 & dice=0 -> 0.9: (dice'=77) + 0.1: (dice'=78);
+        [manual_cycle_successful] dice=77 -> (item'=5) & (gripper'=1) & (warehouse'=0) & (dice'=79);
+        [manual_cycle_unsuccessful] dice=78 -> (robot'=0) & (dice'=79);
+        [manual_cycle_observation] movability_observed<20 & dice=79 -> (movability'=1) & (dice'=0);
+        [manual_cycle_observation] movability_observed>=20 & dice=79 -> (movability'=0) & (dice'=0);
+        [manual_reset_motion] movability=1 & dice=0 -> (movability'=0);
+
+        // Technician fixes the process
+        [technician_reset_conveyor] conveyor!=2 -> (conveyor'=2);
+        [technician_reset_sorter] sorter!=1 -> (sorter'=1);
+        [technician_remove_item_from_gripper] item=6 -> (item'=0);
+endmodule
+
+module item
+        // true_item_state : [0..6] init 0;
+        true_item_state : [0..6];
+        // 0 in_the_box
+        // 1 detected
+        // 2 in_the_gripper
+        // 5 lost_in_workspace
+        // 6 on_the_sorter
+        [get_box_info] true -> (true_item_state'=0);
+        [detect_item_successful] true -> (true_item_state'=1);
+        [grasp_successful] true -> (true_item_state'=2);
+        [transport_unsuccessful_lost_item] true -> (true_item_state'=5);
+        [place_successful] true -> (true_item_state'=6);
+        [get_decommission_info_unsuccessful] true -> (true_item_state'=0);
+        [check_empty] true -> (true_item_state'=0);
+        [update_warehouse] true -> (true_item_state'=0);
+
+        // Autonomous Recovery
+        [dispose_item_roll_dice] true -> (true_item_state'=0);
+        [drop_item_in_box_successful] true -> (true_item_state'=0);
+
+        // Manual Recovery
+        [manual_grasp_successful] true -> (true_item_state'=2);
+        [manual_place_successful] true -> (true_item_state'=6);
+        [manual_cycle_successful] true -> (true_item_state'=6);
+endmodule
+
+module obstacle
+        // true_obstacle_state : [0..3] init 0;
+        true_obstacle_state : [0..3];
+        // 0 no_obstacle
+        // 1 obstacle_present
+        // 2 obstacle_detected
+        // 3 no_obstacle
+        [transport_unsuccessful_obstacle] true -> (true_obstacle_state'=1);
+
+        // Autonomous Recovery
+        [detect_obstacle] true -> (true_obstacle_state'=2);
+endmodule
+
+module gripper
+        // true_gripper_state: [1..2] init 1;
+        true_gripper_state: [1..2];
+        // 1 free
+        // 2 occupied
+        [grasp_successful] true_gripper_state=1 -> (true_gripper_state'=2);
+        [grasp_unsuccessful] true_gripper_state=1 -> (true_gripper_state'=1);
+        [transport_unsuccessful_lost_item] true_gripper_state=2 -> (true_gripper_state'=1);
+        [place_successful] true_gripper_state=2 -> (true_gripper_state'=1);
+        [place_unsuccessful] true_gripper_state=2 -> (true_gripper_state'=2);
+
+        [dispose_item_roll_dice] true -> (true_gripper_state'=1);
+        [drop_item_in_box_successful] true -> (true_gripper_state'=1);
+
+        [manual_grasp_successful] true -> (true_gripper_state'=2);
+        [manual_place_successful] true -> (true_gripper_state'=1);
+        [manual_cycle_successful] true -> (true_gripper_state'=1);
+endmodule
+
+module conveyor
+        // true_conveyor_state : [1..2] init 2;
+        true_conveyor_state : [1..2];
+        // 1 moving
+        // 2 stopped
+        [request_box] true -> (true_conveyor_state'=1);
+        [box_arrived] true -> (true_conveyor_state'=2);
+endmodule
+
+module sorter
+        // true_sorter_state : [1..2] init 1;
+        true_sorter_state : [1..2];
+        // 1 moving
+        // 2 stopped
+endmodule
+
+module state_observer
+        // box_detectability_observed : [0..100] init 100;
+        // item_detectability_observed : [0..100] init 100;
+        // readability_observed : [0..100] init 100;
+        // graspability_observed : [0..100] init 100;
+        // movability_observed : [0..100] init 100;
+        
+        box_detectability_observed : [0..100];
+        item_detectability_observed : [0..100];
+        readability_observed : [0..100];
+        graspability_observed : [0..100];
+        movability_observed : [0..100];
+
+        // Observations
+        [detect_box_unsuccessful_no_detection] (box_detectability_observed>=20) -> (box_detectability_observed'=box_detectability_observed-20);
+        [detect_box_successful] true -> (box_detectability_observed'=100);
+        [detect_box_unsuccessful_no_box] true -> (box_detectability_observed'=100);
+
+        [detect_item_unsuccessful] (item_detectability_observed>=20) -> (item_detectability_observed'=item_detectability_observed-20);
+        [detect_item_successful] true -> (item_detectability_observed'=100);
+
+        [read_barcode_unsuccessful] (readability_observed>=20) -> (readability_observed'=readability_observed-20);
+        [read_barcode_successful] true -> (readability_observed'=100);
+
+        [grasp_unsuccessful] (graspability_observed>=20) & (movability_observed>=20) -> (graspability_observed'=graspability_observed-20) & (movability_observed'=movability_observed-20);
+        [grasp_unsuccessful] (graspability_observed>=20) & (movability_observed<20) -> (graspability_observed'=graspability_observed-20);
+        [grasp_unsuccessful] (graspability_observed<20) & (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [grasp_successful] true -> (graspability_observed'=100) & (movability_observed'=100);
+
+        [move_to_find_box_pose_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [move_to_find_box_pose_successful] true -> (movability_observed'=100);
+        [move_to_inspect_box_pose_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [move_to_inspect_box_pose_successful] true -> (movability_observed'=100);
+        [transport_unsuccessful_obstacle] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [transport_unsuccessful_lost_item] (movability_observed>=20) -> (movability_observed'=movability_observed-20);        
+        [transport_successful] true -> (movability_observed'=100);
+        [check_gripper_occupied_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [check_gripper_occupied_successful] true -> (movability_observed'=100);
+        [move_to_place_pose_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [move_to_place_pose_successful] true -> (movability_observed'=100);
+        [place_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [place_successful] true -> (movability_observed'=100);
+        [check_gripper_free_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [check_gripper_free_successful] true -> (movability_observed'=100);
+        [move_to_check_empty_pose_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [move_to_check_empty_pose_successful] true -> (movability_observed'=100);
+        [move_home_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [move_home_successful] true -> (movability_observed'=100);
+        [move_to_find_obstacle_pose_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [move_to_find_obstacle_pose_successful] true -> (movability_observed'=100);
+        [flip_item_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [flip_item_successful] true -> (movability_observed'=100);
+        [blind_grasp_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [blind_grasp_successful] true -> (movability_observed'=100);
+        [drop_item_in_box_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [drop_item_in_box_successful] true -> (movability_observed'=100);
+        [adapt_find_box_pose_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [adapt_find_box_pose_successful] true -> (movability_observed'=100);
+        [adapt_inspect_box_pose_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [adapt_inspect_box_pose_successful] true -> (movability_observed'=100);
+        [manual_barcode_scan_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [manual_barcode_scan_successful] true -> (movability_observed'=100);
+        [manual_grasp_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [manual_grasp_successful] true -> (movability_observed'=100);
+        [manual_transport_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [manual_transport_successful] true -> (movability_observed'=100);
+        [manual_place_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [manual_place_successful] true -> (movability_observed'=100);
+        [manual_cycle_unsuccessful] (movability_observed>=20) -> (movability_observed'=movability_observed-20);
+        [manual_cycle_successful] true -> (movability_observed'=100);
+
+endmodule
+
+module warehouse_updater
+        // req_pick_cycles: [0..30] init 2;
+        // req_box_cycles: [0..30] init 2;
+
+        req_pick_cycles: [0..30];
+        req_box_cycles: [0..30];
+
+        [check_gripper_free_successful] box!=5 & req_pick_cycles>0 -> (req_pick_cycles'=(req_pick_cycles-1));
+        [manual_place_successful] req_pick_cycles>0 -> (req_pick_cycles'=(req_pick_cycles-1));
+        [manual_cycle_successful] req_pick_cycles>0 -> (req_pick_cycles'=(req_pick_cycles-1));
+        [get_decommission_info_unsuccessful] req_box_cycles=1 -> (req_box_cycles'=0);
+        [get_decommission_info_unsuccessful] req_box_cycles>1 -> (req_box_cycles'=(req_box_cycles-1)) & (req_pick_cycles'=2);
+        [check_empty] req_box_cycles=1 -> (req_box_cycles'=0);
+        [check_empty] req_box_cycles>1 -> (req_box_cycles'=(req_box_cycles-1)) & (req_pick_cycles'=2);
+        // [decommission] req_box_cycles>1 -> (req_box_cycles'=(req_box_cycles-1)) & (req_pick_cycles'=2);
+        // [decommission_idle] req_box_cycles=1 -> (req_box_cycles'=0);
+endmodule
+
+rewards "total_cost"
+        [check_barcode] num_attempts=0: 1.14955;
+        [check_barcode] num_attempts=1: 1.8995;
+        [check_barcode] num_attempts=2: 2.64945;
+        [check_barcode] num_attempts=3: 3.3994;
+        [check_barcode] num_attempts=4: 4.14935;
+        [check_barcode] num_attempts=5: 4.8993;
+        [check_barcode] num_attempts=6: 5.64925;
+        [manual_place_roll_dice] num_attempts=0: 12.45;
+        [manual_place_roll_dice] num_attempts=1: 12.5;
+        [manual_place_roll_dice] num_attempts=2: 12.55;
+        [manual_place_roll_dice] num_attempts=3: 12.6;
+        [manual_place_roll_dice] num_attempts=4: 12.65;
+        [manual_place_roll_dice] num_attempts=5: 12.7;
+        [manual_place_roll_dice] num_attempts=6: 12.75;
+        [detect_obstacle] num_attempts=0: 0.74955;
+        [detect_obstacle] num_attempts=1: 1.0995;
+        [detect_obstacle] num_attempts=2: 1.44945;
+        [detect_obstacle] num_attempts=3: 1.7994;
+        [detect_obstacle] num_attempts=4: 2.14935;
+        [detect_obstacle] num_attempts=5: 2.4993;
+        [detect_obstacle] num_attempts=6: 2.84925;
+        [dispose_item_roll_dice] num_attempts=0: 1.24955;
+        [dispose_item_roll_dice] num_attempts=1: 2.0995;
+        [dispose_item_roll_dice] num_attempts=2: 2.94945;
+        [dispose_item_roll_dice] num_attempts=3: 3.7994;
+        [dispose_item_roll_dice] num_attempts=4: 4.64935;
+        [dispose_item_roll_dice] num_attempts=5: 5.4993;
+        [dispose_item_roll_dice] num_attempts=6: 6.34925;
+        [detect_item_roll_dice] num_attempts=0: 0.76;
+        [detect_item_roll_dice] num_attempts=1: 1.2;
+        [detect_item_roll_dice] num_attempts=2: 1.64;
+        [detect_item_roll_dice] num_attempts=3: 2.08;
+        [detect_item_roll_dice] num_attempts=4: 2.52;
+        [detect_item_roll_dice] num_attempts=5: 2.96;
+        [detect_item_roll_dice] num_attempts=6: 3.4;
+        [drop_item_in_box_roll_dice] num_attempts=0: 0.74955;
+        [drop_item_in_box_roll_dice] num_attempts=1: 1.0995;
+        [drop_item_in_box_roll_dice] num_attempts=2: 1.44945;
+        [drop_item_in_box_roll_dice] num_attempts=3: 1.7994;
+        [drop_item_in_box_roll_dice] num_attempts=4: 2.14935;
+        [drop_item_in_box_roll_dice] num_attempts=5: 2.4993;
+        [drop_item_in_box_roll_dice] num_attempts=6: 2.84925;
+        [initialize] num_attempts=0: 0.54955;
+        [initialize] num_attempts=1: 0.6995;
+        [initialize] num_attempts=2: 0.84945;
+        [initialize] num_attempts=3: 0.9994;
+        [initialize] num_attempts=4: 1.14935;
+        [initialize] num_attempts=5: 1.2993;
+        [initialize] num_attempts=6: 1.44925;
+        [semi_autonomous_detect_item] num_attempts=0: 8.605;
+        [semi_autonomous_detect_item] num_attempts=1: 8.85;
+        [semi_autonomous_detect_item] num_attempts=2: 9.095;
+        [semi_autonomous_detect_item] num_attempts=3: 9.34;
+        [semi_autonomous_detect_item] num_attempts=4: 9.585;
+        [semi_autonomous_detect_item] num_attempts=5: 9.83;
+        [semi_autonomous_detect_item] num_attempts=6: 10.075;
+        [facility_detect_box] num_attempts=0: 12.44955;
+        [facility_detect_box] num_attempts=1: 12.4995;
+        [facility_detect_box] num_attempts=2: 12.54945;
+        [facility_detect_box] num_attempts=3: 12.5994;
+        [facility_detect_box] num_attempts=4: 12.64935;
+        [facility_detect_box] num_attempts=5: 12.6993;
+        [facility_detect_box] num_attempts=6: 12.74925;
+        [get_box_info] num_attempts=0: 1.94955;
+        [get_box_info] num_attempts=1: 3.4995;
+        [get_box_info] num_attempts=2: 5.04945;
+        [get_box_info] num_attempts=3: 6.5994;
+        [get_box_info] num_attempts=4: 8.14935;
+        [get_box_info] num_attempts=5: 9.6993;
+        [get_box_info] num_attempts=6: 11.24925;
+        [box_arrived] num_attempts=0: 0.94955;
+        [box_arrived] num_attempts=1: 1.4995;
+        [box_arrived] num_attempts=2: 2.04945;
+        [box_arrived] num_attempts=3: 2.5994;
+        [box_arrived] num_attempts=4: 3.14935;
+        [box_arrived] num_attempts=5: 3.6993;
+        [box_arrived] num_attempts=6: 4.24925;
+        [transport_roll_dice] num_attempts=0: 0.7275;
+        [transport_roll_dice] num_attempts=1: 1.075;
+        [transport_roll_dice] num_attempts=2: 1.4225;
+        [transport_roll_dice] num_attempts=3: 1.77;
+        [transport_roll_dice] num_attempts=4: 2.1175;
+        [transport_roll_dice] num_attempts=5: 2.465;
+        [transport_roll_dice] num_attempts=6: 2.8125;
+        [check_empty] num_attempts=0: 0.94955;
+        [check_empty] num_attempts=1: 1.4995;
+        [check_empty] num_attempts=2: 2.04945;
+        [check_empty] num_attempts=3: 2.5994;
+        [check_empty] num_attempts=4: 3.14935;
+        [check_empty] num_attempts=5: 3.6993;
+        [check_empty] num_attempts=6: 4.24925;
+        [request_box] num_attempts=0: 1.44955;
+        [request_box] num_attempts=1: 2.4995;
+        [request_box] num_attempts=2: 3.54945;
+        [request_box] num_attempts=3: 4.5994;
+        [request_box] num_attempts=4: 5.64935;
+        [request_box] num_attempts=5: 6.6993;
+        [request_box] num_attempts=6: 7.74925;
+        [get_decommission_info_roll_dice] num_attempts=0: 0.94955;
+        [get_decommission_info_roll_dice] num_attempts=1: 1.4995;
+        [get_decommission_info_roll_dice] num_attempts=2: 2.04945;
+        [get_decommission_info_roll_dice] num_attempts=3: 2.5994;
+        [get_decommission_info_roll_dice] num_attempts=4: 3.14935;
+        [get_decommission_info_roll_dice] num_attempts=5: 3.6993;
+        [get_decommission_info_roll_dice] num_attempts=6: 4.24925;
+        [explore_gripper] num_attempts=0: 0.74955;
+        [explore_gripper] num_attempts=1: 1.0995;
+        [explore_gripper] num_attempts=2: 1.44945;
+        [explore_gripper] num_attempts=3: 1.7994;
+        [explore_gripper] num_attempts=4: 2.14935;
+        [explore_gripper] num_attempts=5: 2.4993;
+        [explore_gripper] num_attempts=6: 2.84925;
+        [manual_barcode_scan_roll_dice] num_attempts=0: 24.45;
+        [manual_barcode_scan_roll_dice] num_attempts=1: 24.5;
+        [manual_barcode_scan_roll_dice] num_attempts=2: 24.55;
+        [manual_barcode_scan_roll_dice] num_attempts=3: 24.6;
+        [manual_barcode_scan_roll_dice] num_attempts=4: 24.65;
+        [manual_barcode_scan_roll_dice] num_attempts=5: 24.7;
+        [manual_barcode_scan_roll_dice] num_attempts=6: 24.75;
+        [manual_transport_roll_dice] num_attempts=0: 8.45;
+        [manual_transport_roll_dice] num_attempts=1: 8.5;
+        [manual_transport_roll_dice] num_attempts=2: 8.55;
+        [manual_transport_roll_dice] num_attempts=3: 8.6;
+        [manual_transport_roll_dice] num_attempts=4: 8.65;
+        [manual_transport_roll_dice] num_attempts=5: 8.7;
+        [manual_transport_roll_dice] num_attempts=6: 8.75;
+        [move_to_find_obstacle_pose_roll_dice] num_attempts=0: 0.74955;
+        [move_to_find_obstacle_pose_roll_dice] num_attempts=1: 1.0995;
+        [move_to_find_obstacle_pose_roll_dice] num_attempts=2: 1.44945;
+        [move_to_find_obstacle_pose_roll_dice] num_attempts=3: 1.7994;
+        [move_to_find_obstacle_pose_roll_dice] num_attempts=4: 2.14935;
+        [move_to_find_obstacle_pose_roll_dice] num_attempts=5: 2.4993;
+        [move_to_find_obstacle_pose_roll_dice] num_attempts=6: 2.84925;
+        [facility_explore_sorter] num_attempts=0: 8.44955;
+        [facility_explore_sorter] num_attempts=1: 8.4995;
+        [facility_explore_sorter] num_attempts=2: 8.54945;
+        [facility_explore_sorter] num_attempts=3: 8.5994;
+        [facility_explore_sorter] num_attempts=4: 8.64935;
+        [facility_explore_sorter] num_attempts=5: 8.6993;
+        [facility_explore_sorter] num_attempts=6: 8.74925;
+        [move_home_roll_dice] num_attempts=0: 0.74955;
+        [move_home_roll_dice] num_attempts=1: 1.0995;
+        [move_home_roll_dice] num_attempts=2: 1.44945;
+        [move_home_roll_dice] num_attempts=3: 1.7994;
+        [move_home_roll_dice] num_attempts=4: 2.14935;
+        [move_home_roll_dice] num_attempts=5: 2.4993;
+        [move_home_roll_dice] num_attempts=6: 2.84925;
+        [move_to_place_pose_roll_dice] num_attempts=0: 0.64955;
+        [move_to_place_pose_roll_dice] num_attempts=1: 0.8995;
+        [move_to_place_pose_roll_dice] num_attempts=2: 1.14945;
+        [move_to_place_pose_roll_dice] num_attempts=3: 1.3994;
+        [move_to_place_pose_roll_dice] num_attempts=4: 1.64935;
+        [move_to_place_pose_roll_dice] num_attempts=5: 1.8993;
+        [move_to_place_pose_roll_dice] num_attempts=6: 2.14925;
+        [blind_grasp_roll_dice] num_attempts=0: 1.0475;
+        [blind_grasp_roll_dice] num_attempts=1: 1.875;
+        [blind_grasp_roll_dice] num_attempts=2: 2.7025;
+        [blind_grasp_roll_dice] num_attempts=3: 3.53;
+        [blind_grasp_roll_dice] num_attempts=4: 4.3575;
+        [blind_grasp_roll_dice] num_attempts=5: 5.185;
+        [blind_grasp_roll_dice] num_attempts=6: 6.0125;
+        [check_gripper_occupied_roll_dice] num_attempts=0: 0.64955;
+        [check_gripper_occupied_roll_dice] num_attempts=1: 0.8995;
+        [check_gripper_occupied_roll_dice] num_attempts=2: 1.14945;
+        [check_gripper_occupied_roll_dice] num_attempts=3: 1.3994;
+        [check_gripper_occupied_roll_dice] num_attempts=4: 1.64935;
+        [check_gripper_occupied_roll_dice] num_attempts=5: 1.8993;
+        [check_gripper_occupied_roll_dice] num_attempts=6: 2.14925;
+        [adapt_inspect_box_pose_roll_dice] num_attempts=0: 0.94955;
+        [adapt_inspect_box_pose_roll_dice] num_attempts=1: 1.4995;
+        [adapt_inspect_box_pose_roll_dice] num_attempts=2: 2.04945;
+        [adapt_inspect_box_pose_roll_dice] num_attempts=3: 2.5994;
+        [adapt_inspect_box_pose_roll_dice] num_attempts=4: 3.14935;
+        [adapt_inspect_box_pose_roll_dice] num_attempts=5: 3.6993;
+        [adapt_inspect_box_pose_roll_dice] num_attempts=6: 4.24925;
+        [facility_reset_motion] num_attempts=0: 8.44955;
+        [facility_reset_motion] num_attempts=1: 8.4995;
+        [facility_reset_motion] num_attempts=2: 8.54945;
+        [facility_reset_motion] num_attempts=3: 8.5994;
+        [facility_reset_motion] num_attempts=4: 8.64935;
+        [facility_reset_motion] num_attempts=5: 8.6993;
+        [facility_reset_motion] num_attempts=6: 8.74925;
+        [semi_autonomous_grasp_item] num_attempts=0: 8.605;
+        [semi_autonomous_grasp_item] num_attempts=1: 8.85;
+        [semi_autonomous_grasp_item] num_attempts=2: 9.095;
+        [semi_autonomous_grasp_item] num_attempts=3: 9.34;
+        [semi_autonomous_grasp_item] num_attempts=4: 9.585;
+        [semi_autonomous_grasp_item] num_attempts=5: 9.83;
+        [semi_autonomous_grasp_item] num_attempts=6: 10.075;
+        [flip_item_roll_dice] num_attempts=0: 1.24955;
+        [flip_item_roll_dice] num_attempts=1: 2.0995;
+        [flip_item_roll_dice] num_attempts=2: 2.94945;
+        [flip_item_roll_dice] num_attempts=3: 3.7994;
+        [flip_item_roll_dice] num_attempts=4: 4.64935;
+        [flip_item_roll_dice] num_attempts=5: 5.4993;
+        [flip_item_roll_dice] num_attempts=6: 6.34925;
+        [detect_box_roll_dice] num_attempts=0: 0.84955;
+        [detect_box_roll_dice] num_attempts=1: 1.2995;
+        [detect_box_roll_dice] num_attempts=2: 1.74945;
+        [detect_box_roll_dice] num_attempts=3: 2.1994;
+        [detect_box_roll_dice] num_attempts=4: 2.64935;
+        [detect_box_roll_dice] num_attempts=5: 3.0993;
+        [detect_box_roll_dice] num_attempts=6: 3.54925;
+        [manual_grasp_roll_dice] num_attempts=0: 10.05;
+        [manual_grasp_roll_dice] num_attempts=1: 10.1;
+        [manual_grasp_roll_dice] num_attempts=2: 10.15;
+        [manual_grasp_roll_dice] num_attempts=3: 10.2;
+        [manual_grasp_roll_dice] num_attempts=4: 10.25;
+        [manual_grasp_roll_dice] num_attempts=5: 10.3;
+        [manual_grasp_roll_dice] num_attempts=6: 10.35;
+        [read_barcode_roll_dice] num_attempts=0: 0.805;
+        [read_barcode_roll_dice] num_attempts=1: 1.25;
+        [read_barcode_roll_dice] num_attempts=2: 1.695;
+        [read_barcode_roll_dice] num_attempts=3: 2.14;
+        [read_barcode_roll_dice] num_attempts=4: 2.585;
+        [read_barcode_roll_dice] num_attempts=5: 3.03;
+        [read_barcode_roll_dice] num_attempts=6: 3.475;
+        [adapt_find_box_pose_roll_dice] num_attempts=0: 0.94955;
+        [adapt_find_box_pose_roll_dice] num_attempts=1: 1.4995;
+        [adapt_find_box_pose_roll_dice] num_attempts=2: 2.04945;
+        [adapt_find_box_pose_roll_dice] num_attempts=3: 2.5994;
+        [adapt_find_box_pose_roll_dice] num_attempts=4: 3.14935;
+        [adapt_find_box_pose_roll_dice] num_attempts=5: 3.6993;
+        [adapt_find_box_pose_roll_dice] num_attempts=6: 4.24925;
+        [facility_explore_box] num_attempts=0: 8.44955;
+        [facility_explore_box] num_attempts=1: 8.4995;
+        [facility_explore_box] num_attempts=2: 8.54945;
+        [facility_explore_box] num_attempts=3: 8.5994;
+        [facility_explore_box] num_attempts=4: 8.64935;
+        [facility_explore_box] num_attempts=5: 8.6993;
+        [facility_explore_box] num_attempts=6: 8.74925;
+        [facility_explore_conveyor] num_attempts=0: 8.44955;
+        [facility_explore_conveyor] num_attempts=1: 8.4995;
+        [facility_explore_conveyor] num_attempts=2: 8.54945;
+        [facility_explore_conveyor] num_attempts=3: 8.5994;
+        [facility_explore_conveyor] num_attempts=4: 8.64935;
+        [facility_explore_conveyor] num_attempts=5: 8.6993;
+        [facility_explore_conveyor] num_attempts=6: 8.74925;
+        [move_to_find_box_pose_roll_dice] num_attempts=0: 0.74955;
+        [move_to_find_box_pose_roll_dice] num_attempts=1: 1.0995;
+        [move_to_find_box_pose_roll_dice] num_attempts=2: 1.44945;
+        [move_to_find_box_pose_roll_dice] num_attempts=3: 1.7994;
+        [move_to_find_box_pose_roll_dice] num_attempts=4: 2.14935;
+        [move_to_find_box_pose_roll_dice] num_attempts=5: 2.4993;
+        [move_to_find_box_pose_roll_dice] num_attempts=6: 2.84925;
+        [move_to_inspect_box_pose_roll_dice] num_attempts=0: 0.74955;
+        [move_to_inspect_box_pose_roll_dice] num_attempts=1: 1.0995;
+        [move_to_inspect_box_pose_roll_dice] num_attempts=2: 1.44945;
+        [move_to_inspect_box_pose_roll_dice] num_attempts=3: 1.7994;
+        [move_to_inspect_box_pose_roll_dice] num_attempts=4: 2.14935;
+        [move_to_inspect_box_pose_roll_dice] num_attempts=5: 2.4993;
+        [move_to_inspect_box_pose_roll_dice] num_attempts=6: 2.84925;
+        [check_gripper_free_roll_dice] num_attempts=0: 0.64955;
+        [check_gripper_free_roll_dice] num_attempts=1: 0.8995;
+        [check_gripper_free_roll_dice] num_attempts=2: 1.14945;
+        [check_gripper_free_roll_dice] num_attempts=3: 1.3994;
+        [check_gripper_free_roll_dice] num_attempts=4: 1.64935;
+        [check_gripper_free_roll_dice] num_attempts=5: 1.8993;
+        [check_gripper_free_roll_dice] num_attempts=6: 2.14925;
+        [move_to_check_empty_pose_roll_dice] num_attempts=0: 0.74955;
+        [move_to_check_empty_pose_roll_dice] num_attempts=1: 1.0995;
+        [move_to_check_empty_pose_roll_dice] num_attempts=2: 1.44945;
+        [move_to_check_empty_pose_roll_dice] num_attempts=3: 1.7994;
+        [move_to_check_empty_pose_roll_dice] num_attempts=4: 2.14935;
+        [move_to_check_empty_pose_roll_dice] num_attempts=5: 2.4993;
+        [move_to_check_empty_pose_roll_dice] num_attempts=6: 2.84925;
+        [update_warehouse] num_attempts=0: 0.54955;
+        [update_warehouse] num_attempts=1: 0.6995;
+        [update_warehouse] num_attempts=2: 0.84945;
+        [update_warehouse] num_attempts=3: 0.9994;
+        [update_warehouse] num_attempts=4: 1.14935;
+        [update_warehouse] num_attempts=5: 1.2993;
+        [update_warehouse] num_attempts=6: 1.44925;
+        [place_roll_dice] num_attempts=0: 0.705;
+        [place_roll_dice] num_attempts=1: 1.05;
+        [place_roll_dice] num_attempts=2: 1.395;
+        [place_roll_dice] num_attempts=3: 1.74;
+        [place_roll_dice] num_attempts=4: 2.085;
+        [place_roll_dice] num_attempts=5: 2.43;
+        [place_roll_dice] num_attempts=6: 2.775;
+        [manual_cycle_roll_dice] num_attempts=0: 40.45;
+        [manual_cycle_roll_dice] num_attempts=1: 40.5;
+        [manual_cycle_roll_dice] num_attempts=2: 40.55;
+        [manual_cycle_roll_dice] num_attempts=3: 40.6;
+        [manual_cycle_roll_dice] num_attempts=4: 40.65;
+        [manual_cycle_roll_dice] num_attempts=5: 40.7;
+        [manual_cycle_roll_dice] num_attempts=6: 40.75;
+        [grasp_roll_dice] num_attempts=0: 1.1825;
+        [grasp_roll_dice] num_attempts=1: 2.025;
+        [grasp_roll_dice] num_attempts=2: 2.8675;
+        [grasp_roll_dice] num_attempts=3: 3.71;
+        [grasp_roll_dice] num_attempts=4: 4.5525;
+        [grasp_roll_dice] num_attempts=5: 5.395;
+        [grasp_roll_dice] num_attempts=6: 6.2375;
+
+endrewards
+
+
+label "box_detected" = box=3;
+label "pick_done" = item=5 & gripper=1; 
+label "box_done" = box=5;
+label "task_done" = req_pick_cycles=0 & req_box_cycles=0;
+
+// init true endinit
+// one initial state
+// init item=0 & barcode=0 & box=0 & obstacle=0 & gripper=0 & conveyor=0 & sorter=0 & robot=0 & warehouse=2 & num_attempts=0 & dice=0 & true_item_state=0 & true_obstacle_state=0 & true_gripper_state=1 & true_conveyor_state=2 & true_sorter_state=1 & item_detectability=0 & item_detectability_observed=100 & readability=0 & readability_observed=100 & graspability=0 & graspability_observed=100 & req_pick_cycles=2 & req_box_cycles=2 endinit
+
+init 
+item>=0 & barcode>=0 & box>=0 & obstacle>=0 & gripper>=0 & conveyor>=1 & sorter>=1 & robot>=0 & warehouse>=2 & box_detectability>=0 & item_detectability>=0 & readability>=0 & graspability>=0 & movability>=0
+& dice=80 & true_item_state=item & true_obstacle_state=obstacle & true_gripper_state=gripper & true_conveyor_state=conveyor & true_sorter_state=sorter & item_detectability_observed=100 & readability_observed=100 & graspability_observed=100 & num_attempts=0 & req_pick_cycles=2 & req_box_cycles=2 // variables of the additional modules
+& !((box=1 | box=2 | box=3 | box=5 | box=6) & item>0 & barcode>0 & (robot>=2 & robot<=5) & (warehouse>=3 & warehouse<=4) & item_detectability>0 & readability>0 & graspability>0) // when no box is there for picking, we don't care for any item
+& !(box=4 & (warehouse=1 | warehouse=2) & box_detectability>0) // during picking, we do not care about the box preparation
+& !(sorter=2) // we cannot do anything if the sorter stops 
+& !(conveyor=1 & (box=1 | box=2 | box=3 | box=5 | box=6) & item>0 & barcode>0 & (robot>=2 & robot<=5) & (warehouse>=3 & warehouse<=4) & item_detectability>0 & readability>0 & graspability>0) // pick cycle makes no sense if the conveyor is moving
+endinit

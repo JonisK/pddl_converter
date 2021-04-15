@@ -1,0 +1,196 @@
+mdp
+
+module task_planner
+        // item : [0..6] init 0;
+        // barcode : [0..3] init 0;
+        // box : [0..6] init 2;
+        // obstacle : [0..1] init 0;
+        // gripper : [0..2] init 1;
+        // conveyor : [0..2] init 2;
+        // sorter : [0..2] init 1;
+        // robot : [0..8] init 0;
+        // warehouse : [0..6] init 2;
+        // box_detectability : [0..2] init 0;
+        // item_detectability : [0..2] init 0;
+        // readability : [0..2] init 0;     
+        // graspability : [0..2] init 0;
+        // movability : [0..1] init 0;
+
+        item : [0..6];
+        barcode : [0..3];
+        box : [0..6];
+        obstacle : [0..1];
+        // obstacle 0 unknown
+        // obstacle 1 obstacle_present
+        gripper : [0..2];
+        conveyor : [0..2];
+        sorter : [0..2];
+        robot : [0..8];
+        // robot 0 unknown
+        // robot 1 find_box_pose
+        // robot 2 inspect_box_pose
+        // robot 3 post_grasp_pose
+        // robot 4 pre_place_pose
+        // robot 5 place_pose
+        // robot 6 check_empty_pose
+        // robot 7 home_pose
+        // robot 8 find_obstacle_pose
+        warehouse : [0..6];
+        box_detectability : [0..2];
+        item_detectability : [0..2];
+        readability : [0..2];
+        graspability : [0..2];
+        movability : [0..1];
+        // dice 0 reset
+        // dice 1 detect_item successful
+        // dice 2 detect_item unsuccessful
+        // dice 3 detect_item observation
+        // dice 4 read_barcode successful
+        // dice 5 read_barcode unsuccessful
+        // dice 6 read_barcode observation
+        // dice 7 grasp successful
+        // dice 8 grasp unsuccessful
+        // dice 9 grasp observation
+        // dice 10 transport successful
+        // dice 11 transport unsuccessful, lost item
+        // dice 12 transport unsuccessful, obstacle
+        // dice 13 transport observation
+        // dice 14 place successful
+        // dice 15 place unsuccessful
+        // dice 16 place observation
+        // dice 17 detect_box successful
+        // dice 18 detect_box unsuccessful, no detection
+        // dice 19 detect_box unsuccessful, no box
+        // dice 20 detect_box observation
+        // dice 21 successful -> emptiness check needed
+        // dice 22 unsuccessful -> no emptiness check needed
+        // dice 23 move_to_find_box_pose successful
+        // dice 24 move_to_find_box_pose unsuccessful
+        // dice 25 move_to_find_box_pose observation
+        // dice 26 move_to_inspect_box_pose successful
+        // dice 27 move_to_inspect_box_pose unsuccessful
+        // dice 28 move_to_inspect_box_pose observation
+        // dice 29 check_gripper_occupied successful
+        // dice 30 check_gripper_occupied unsuccessful
+        // dice 31 check_gripper_occupied observation
+        // dice 32 move_to_place_pose successful
+        // dice 33 move_to_place_pose unsuccessful
+        // dice 34 move_to_place_pose observation
+        // dice 35 check_gripper_free successful
+        // dice 36 check_gripper_free unsuccessful
+        // dice 37 check_gripper_free observation
+        // dice 38 move_to_check_empty_pose successful
+        // dice 39 move_to_check_empty_pose unsuccessful
+        // dice 40 move_to_check_empty_pose observation
+        // dice 41 move_home successful
+        // dice 42 move_home unsuccessful
+        // dice 43 move_home observation
+        // dice 44 move_to_find_obstacle_pose successful
+        // dice 45 move_to_find_obstacle_pose unsuccessful
+        // dice 46 move_to_find_obstacle_pose observation
+        // dice 47 flip_item successful
+        // dice 48 flip_item unsuccessful
+        // dice 49 flip_item observation
+        // dice 50 blind_grasp successful
+        // dice 51 blind_grasp unsuccessful
+        // dice 52 blind_grasp observation  
+        // dice 53 drop_item_in_box successful
+        // dice 54 drop_item_in_box unsuccessful
+        // dice 55 drop_item_in_box observation 
+        // dice 56 dispose_item successful
+        // dice 57 dispose_item unsuccessful
+        // dice 58 dispose_item observation 
+        // dice 59 adapt_find_box_pose successful
+        // dice 60 adapt_find_box_pose unsuccessful
+        // dice 61 adapt_find_box_pose observation  
+        // dice 62 adapt_inspect_box_pose successful
+        // dice 63 adapt_inspect_box_pose unsuccessful
+        // dice 64 adapt_inspect_box_pose observation 
+        // dice 65 manual_barcode_scan successful
+        // dice 66 manual_barcode_scan unsuccessful
+        // dice 67 manual_barcode_scan observation    
+        // dice 68 manual_grasp successful
+        // dice 69 manual_grasp unsuccessful
+        // dice 70 manual_grasp observation  
+        // dice 71 manual_transport successful
+        // dice 72 manual_transport unsuccessful
+        // dice 73 manual_transport observation  
+        // dice 74 manual_place successful
+        // dice 75 manual_place unsuccessful
+        // dice 76 manual_place observation  
+        // dice 77 manual_cycle successful
+        // dice 78 manual_cycle unsuccessful
+        // dice 79 manual_cycle observation  
+        // dice 80 initialize
+        
+        
+        // Find Box
+        [request_box] (box=5 | box=6) & (robot=4 | robot=5 | robot=7) -> (box'=1) & (conveyor'=1);
+        [box_arrived] box=1 & conveyor=1 -> (box'=2) & (conveyor'=2);
+        [move_to_find_box_pose] obstacle=0 & gripper=1 & robot=7 & movability=0 -> (robot'=1);
+        [detect_box] (box=0 | box=2) & gripper=1 & conveyor=2 & robot=1 & box_detectability=0 & warehouse=2 -> (box'=3);
+        [get_box_info] (box=3) -> (box'=4) & (warehouse'=3);
+        
+        // Find Item
+        [move_to_inspect_box_pose] box=4 & obstacle=0 & gripper=1 & conveyor=2 & robot!=2 & movability=0 -> (robot'=2);
+        [detect_item] item !=1 & box=4 & gripper=1 & conveyor=2 & robot=2 & (warehouse=3 | warehouse=4) & item_detectability=0 & movability=0 -> (item'=1);
+        
+        // Read Barcode
+        [read_barcode] item=1 & barcode=0 & box=4 & gripper=1 & conveyor=2 & robot=2 & warehouse=3 & readability=0 -> (barcode'=1);
+        [check_barcode] barcode=1 & warehouse=3 -> (barcode'=2) & (warehouse'=4);
+
+        // Grasp Item
+        [grasp] item=1 & barcode=2 & box=4 & gripper=1 & conveyor=2 & robot=2 & warehouse=4 & graspability=0 & movability=0 -> (item'=2) & (gripper'=2) & (robot'=3);
+
+        // Transport Item
+        [transport] item=2 & obstacle=0 & gripper=2 & robot!=4 & movability=0 -> (item'=3) & (robot'=4);
+        [check_gripper_occupied] gripper=2 & item=3 & movability=0 -> (item'=2);
+        
+        // Place Item
+        [move_to_place_pose] item=2 & obstacle=0 & sorter=1 & robot=4 & movability=0 -> (robot'=5);
+        [place] item=2 & barcode=2 & gripper=2 & sorter=1 & robot=5 & warehouse=4 & movability=0 -> (item'=0) & (gripper'=0);
+        [check_gripper_free] item=0 & gripper=0 & robot=5 & warehouse=4 & movability=0 -> (item'=5) & (gripper'=1) & (warehouse'=0);
+
+        // Update Warehouse after Place
+        [update_warehouse] item=5 & box!=5 & warehouse=0 -> (item'=0) & (warehouse'=3);
+
+        // Check Empty
+        [get_decommission_info] box=4 & gripper=1 & warehouse=5 -> (warehouse'=6);
+        [move_to_check_empty_pose] box=4 & obstacle=0 & gripper=1 & conveyor=2 & robot!=6 & movability=0 -> (robot'=6);
+        [check_empty] box=4 & gripper=1 & conveyor=2 & robot=6 & warehouse=6 -> (item'=0) & (barcode'=0) & (box'=5) & (warehouse'=1);
+        
+        // [decommission] warehouse =0 & box=5 -> (item'=0) & (barcode'=0) & (box'=0) & (warehouse'=2);
+        // [decommission_idle] warehouse=0 & box=5 -> (item'=0) & (barcode'=0) & (box'=0) & (warehouse'=1);
+
+        // Motion
+        [move_home] obstacle=0 & conveyor=2 & movability=0 -> (robot'=7);
+
+        // Exploration
+        [facility_explore_box] box=0 -> (box'=2);
+        [facility_explore_conveyor] conveyor=0 -> (conveyor'=2);
+        [facility_explore_sorter] sorter=0 -> (sorter'=1);
+        [explore_gripper] gripper=0 & movability=0 -> (gripper'=1);
+        [move_to_find_obstacle_pose] obstacle=1 & conveyor=2 & robot!=8 & movability=0 -> (robot'=8);
+        [detect_obstacle] obstacle=1 & gripper=1 & conveyor=2 & robot=8 -> (obstacle'=0);
+
+        // Autonomous Recovery
+        [flip_item] box=4 & conveyor=2 & gripper=1 & robot=2 & movability=0 -> (item'=0) & (gripper'=0) & (item_detectability'=0) & (readability'=0) & (graspability'=0);
+        [blind_grasp] box=4 & conveyor=2 & gripper=1 & robot=2 & item_detectability=2 & warehouse=4 & movability=0 -> (item'=2) & (robot'=3) & (item_detectability'=0) & (readability'=0) & (graspability'=0);
+        [drop_item_in_box] item!=0 & box=4 & conveyor=2 & gripper=2 & (robot=2 | robot=3) & movability=0 -> (item'=0) & (gripper'=1);
+        [dispose_item] item=0 & gripper=2 -> (item'=0) & (gripper'=1);
+        [adapt_find_box_pose] obstacle=0 & gripper=1 & box_detectability=1 & movability=0 -> (robot'=1) & (box_detectability'=0);
+        [adapt_inspect_box_pose] conveyor=2 & gripper=1 & (item_detectability=1 | readability=1) & (warehouse=3 | warehouse=4) & movability=0 -> (robot'=2) & (item_detectability'=0) & (readability'=0);
+        [adapt_grasp_parameters] item=1 & barcode=2 & box=4 & conveyor=2 & warehouse=4 & graspability=1 -> (graspability'=0);
+        [facility_detect_box] (box=0 | box=2) & conveyor=2 & gripper=1 & (robot=1 | robot=7) & warehouse=2 & box_detectability=2 -> (box'=3) & (box_detectability'=0);
+        [facility_reset_motion] movability=1 -> (movability'=0);
+        
+        // Semi-Autonomous Recovery
+        [semi_autonomous_detect_item] item !=1 & box=4 & gripper=1 & conveyor=2 & robot=2 & (warehouse=3 | warehouse=4) & (item_detectability=0 | item_detectability=1) -> (item'=1) & (graspability'=0);
+        [semi_autonomous_grasp_item] item =1 & box=4 & gripper=1 & conveyor=2 & robot=2 & warehouse=4 -> (item'=1) & (graspability'=0);
+        [semi_autonomous_reset_motion] movability=1 -> (movability'=0);
+
+        // Manual Recovery
+
+        // Technician fixes the process
+endmodule
+

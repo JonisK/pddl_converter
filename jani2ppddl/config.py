@@ -1,0 +1,4 @@
+GREATER = False
+LESS = False
+LESS_EQUAL = True
+GREATER_EQUAL = False

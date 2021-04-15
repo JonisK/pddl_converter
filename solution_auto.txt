@@ -1,0 +1,57 @@
+
+ff: parsing domain file
+domain 'SAINT_REDUCED_AUTO' defined
+ ... done.
+ff: parsing problem file
+problem 'SAINT_REDUCED_AUTO' defined
+ ... done.
+
+
+translating negated cond for predicate VALUE
+no metric specified.
+
+ff: search configuration is best-first search with helpful actions pruning.
+Metric is plan length.
+NO COST MINIMIZATION. (and no cost-minimizing relaxed plans).
+
+advancing to goal distance:   15
+                              14
+                              13
+                              12
+                              11
+                              10
+                               9
+                               8
+                               5
+                               4
+                               3
+                               2
+                               0
+
+ff: found legal plan as follows
+step    0: FACILITY_EXPLORE_SORTER
+        1: FACILITY_EXPLORE_CONVEYOR
+        2: MOVE_HOME N0
+        3: EXPLORE_GRIPPER
+        4: MOVE_TO_FIND_BOX_POSE
+        5: DETECT_BOX
+        6: GET_BOX_INFO N2
+        7: MOVE_TO_INSPECT_BOX_POSE N1
+        8: DETECT_ITEM N0
+        9: READ_BARCODE
+       10: CHECK_BARCODE
+       11: GRASP
+       12: TRANSPORT N3
+       13: CHECK_GRIPPER_OCCUPIED
+       14: MOVE_TO_PLACE_POSE
+       15: PLACE
+       16: CHECK_GRIPPER_FREE
+
+time spent:    0.00 seconds instantiating 7585 easy, 0 hard action templates
+               0.00 seconds reachability analysis, yielding 160 facts and 77 actions
+               0.00 seconds creating final representation with 68 relevant facts, 0 relevant fluents
+               0.00 seconds computing LNF
+               0.00 seconds building connectivity graph
+               0.00 seconds searching, evaluating 31 states, to a max depth of 0
+               0.00 seconds total time
+
