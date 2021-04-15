@@ -1,0 +1,31 @@
+\documentclass[12pt]{article}
+
+\usepackage{tabularx}
+\begin{document}
+\begin{table}[]
+	%\begin{tabularx}{\linewidth} { 
+	%       | >{{\hsize=2\hsize}\centering\arraybackslash}X 
+	%       | >{{\hsize=1.5\hsize}\centering\arraybackslash}X 
+	%       | >{{\hsize=40\hsize}\raggedright\arraybackslash}X | }
+	\caption{State variables and their values for the bin picking process}
+	\label{tab:state_variables}
+	\begin{tabularx}{\textwidth}{llp{0.57\textwidth}}
+		variable                                   & type & values and (index)                                                                                                                                                           \\ \hline
+		item                                       & object     & unknown(0), detected(1), grasped(2), probably\_grasped(3), lost(4), placed(5), stuck\_in\_gripper(6)                                                           \\
+		barcode                                    & object     & unknown(0), scanned(1), correct(2), wrong(3),                                                                                                                                 \\
+		box                                        & object     & unknown(0), in\_arrival(1), arrived(2), detected(3), info\_received(4), decommissioned(5), none\_present(6)                                                                           \\
+		obstacle                                   & object     & unknown(0), obstacle\_present(1)                                                                                                                                        \\
+		gripper                                    & device     & unknown(0), free(1), occupied(2)                                                                                                                                           \\
+		conveyor                                   & device     & unknown(0), moving(1), stopped(2)                                                                                                                                          \\
+		sorter                                     & device     & unknown(0), moving(1), stopped(2)                                                                                                                                          \\
+		robot                                      & device     & unknown(0), find\_box\_pose(1), inspect\_box\_pose(2), post\_grasp\_pose(3), pre\_place\_pose(4), place\_pose(5), check\_empty\_pose(6), home\_pose(7), find\_obstacle\_pose(8) \\
+		warehouse                                  & control    & unknown(0), idle(1), box\_needed(2), barcode\_needed(3), pick\_needed(4), picks\_completed(5), check\_empty\_needed(6)                                                                 \\
+		box\_detectability & property   & unknown(0), unlikely(1), unfeasible(2)                                                                                                                                     \\
+		item\_detectability   & property   & unknown(0), unlikely(1), unfeasible(2)                                                                                                                                     \\
+		readability        & property   & unknown(0), unlikely(1), unfeasible(2)                                                                                                                                     \\
+		graspability          & property   & unknown(0), unlikely(1), unfeasible(2)                                                                                                                                     \\
+		movability         & property   & unknown(0), unfeasible(1)  
+		\\                                                                                                                                            
+	\end{tabularx}
+\end{table}
+\end{document}
