@@ -80,7 +80,7 @@ See this table for reference:
 
 ## Credits
 
-This repo includes code from and exeutables from Uni Saarland. In specific, those are:
+This repo includes code from and exeutables from Saarland University. In specific, those are:
 
 * `ppddl2jani` and `jani2ppddl` by Michaela Klauck [MKlauck](https://github.com/MKlauck) ([klauck@depend.uni-saarland.de](mailto:klauck@depend.uni-saarland.de)), supplemental material from [this journal article](https://jair.org/index.php/jair/article/view/11595)
 * [Metric-FF v2.1](https://fai.cs.uni-saarland.de/hoffmann/metric-ff.html) by Jörg Hoffmann
