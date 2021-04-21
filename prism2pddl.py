@@ -66,7 +66,7 @@ def main():
 
         # step 3: convert the JANI model to PPDDL
         # note: this command uses the PPDDL converter developed by Michaela Klauck
-        #       at Uni Saarbrücken
+        #       at Saarland University
         print("step 3: convert the JANI model to PPDDL")
         os.system("python2 jani2ppddl/jani2ppddl.py " + output_prism + autonomy + ".jani -c jani2ppddl/config.py")
 
@@ -88,7 +88,7 @@ def main():
 
         # step 6: execute planner with the generated pddl file
         # note: a check for integrity of the generated domain file. Uses metric-ff
-        #       by Jörg Hoffmann from Uni Saarbrücken
+        #       by Jörg Hoffmann from Saarland University
         # note: the maximum number of actions for metric-ff is 50 which is easily
         #       reached with the duplicates created for OR statements. So you need
         #       to comment some actions in the PRISM file to work around.
