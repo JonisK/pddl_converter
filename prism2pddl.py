@@ -59,10 +59,12 @@ def main():
         #       the header comment
         print("step 2: convert the simplified PRISM model to JANI")
         my_path = os.getcwd()
-        os.system("java -jar ~/git/ePMC/epmc-standard.jar jani-export --model-input-type prism "
+        os.system("java -jar " + epmc_path + "epmc-standard.jar jani-export --model-input-type prism "
                   "--jani-exporter-overwrite-jani-file true --model-input-files " + my_path + "/" + output_prism +
                   autonomy + ".prism --jani-exporter-jani-file-name " + my_path + "/" + output_prism + autonomy +
                   ".jani")
+        # os.system("storm-conv --prism " + output_prism + autonomy + ".prism "
+        #           + "--tojani " + output_prism + autonomy + ".jani")
 
         # step 3: convert the JANI model to PPDDL
         # note: this command uses the PPDDL converter developed by Michaela Klauck
